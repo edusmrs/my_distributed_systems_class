@@ -1,15 +1,17 @@
 import threading
+import time
 
 # com compartilhamento de memória
 saldo_central = 0
 
 lock = threading.Lock()
 
-def vender_fichas(id_caixa, quantidade_fichas, valor_ficha):
+def vender_fichas(quantidade_fichas, valor_ficha):
     global saldo_central
-    
+
     for _ in range(quantidade_fichas):
         with lock:
+            # regiao critica
             saldo_central += valor_ficha
 
 def main():
@@ -18,11 +20,13 @@ def main():
     fichas_por_caixa = 1000
     valor_ficha = 10
 
+    
     for i in range(num_caixas):
-        t = threading.Thread(target=vender_fichas, args=(i+1, fichas_por_caixa, valor_ficha))
+        t = threading.Thread(target=vender_fichas, args=(fichas_por_caixa, valor_ficha))
         threads.append(t)
         t.start()
 
+    # espera todas as threads terminarem
     for t in threads:
         t.join()
 
