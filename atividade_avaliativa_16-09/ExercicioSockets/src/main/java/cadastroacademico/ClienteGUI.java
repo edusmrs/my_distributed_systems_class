@@ -165,8 +165,8 @@ public class ClienteGUI extends javax.swing.JFrame {
 
         Pessoa novaPessoa = new Pessoa(nome, data);
         btnEnviar.setEnabled(false);
-
-        // Operação de rede em nova Thread para não congelar a GUI
+        
+        // evitar congelamento da tela 
         new Thread(() -> {
             try (Socket cliente = new Socket("localhost", 50000);
                  ObjectOutputStream saida = new ObjectOutputStream(cliente.getOutputStream());

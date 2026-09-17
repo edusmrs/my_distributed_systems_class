@@ -33,14 +33,12 @@ public class ServidorGUI extends javax.swing.JFrame {
     }
     
     private void iniciarServidor() {
-        // Thread separada para não travar a GUI do Servidor
         new Thread(() -> {
             try (ServerSocket servidor = new ServerSocket(50000)) {
                 log("Servidor rodando na porta 50000...");
                 while (true) {
                     Socket cliente = servidor.accept();
                     log("Cliente conectado: " + cliente.getInetAddress().getHostAddress());
-                    // Dispara thread para tratar o cliente especificamente
                     new Thread(new TrataCliente(cliente)).start();
                 }
             } catch (Exception e) {
@@ -81,7 +79,7 @@ public class ServidorGUI extends javax.swing.JFrame {
 
                 Pessoa p = (Pessoa) entrada.readObject();
                 
-                // Lógica do e-mail: primeiro_nome.ultimo_sobrenome.ano@ufn.edu.br
+                // email
                 String[] partesNome = p.getNome().trim().split("\\s+");
                 String[] partesData = p.getDataNascimento().split("/");
                 
@@ -94,7 +92,7 @@ public class ServidorGUI extends javax.swing.JFrame {
                     p.setEmail("email_invalido@ufn.edu.br");
                 }
 
-                // Verifica duplicidade e insere
+                // verificar duplicidade
                 if (!listaPessoas.contains(p)) {
                     listaPessoas.add(p);
                     System.out.println("Nova pessoa cadastrada: " + p.getNome());
@@ -103,7 +101,6 @@ public class ServidorGUI extends javax.swing.JFrame {
                     System.out.println("Tentativa de cadastro duplicado ignorada: " + p.getNome());
                 }
 
-                // Devolve a pessoa
                 saida.writeObject(p);
                 saida.flush();
 
