@@ -1,0 +1,4 @@
+com\mycompany\udptokenclienteservidor\ComunicadorUDP.class
+com\mycompany\udptokenclienteservidor\GeradorToken.class
+com\mycompany\udptokenclienteservidor\ClienteGUI.class
+com\mycompany\udptokenclienteservidor\ServidorUDP.class
