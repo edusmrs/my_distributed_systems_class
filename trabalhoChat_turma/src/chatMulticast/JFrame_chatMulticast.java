@@ -36,6 +36,7 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
 
     public JFrame_chatMulticast() {
         initComponents();
+        carregarHistorico();
     }
 
     @SuppressWarnings("unchecked")
@@ -376,7 +377,7 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
     private void enviarMsg() throws IOException, NumberFormatException, NullPointerException {
         try {
             String horaAtual = new SimpleDateFormat("HH:mm:ss").format(new Date());
-            String msg = "[" + horaAtual + "]" + jTextField_Nick.getText() + ": " + jTextField_textoDeEnvio.getText();
+            String msg = "[" + horaAtual + "] " + jTextField_Nick.getText() + ": " + jTextField_textoDeEnvio.getText();
             
             String selecionado = jList_usuariosOnline.getSelectedValue();
             
@@ -387,10 +388,25 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
                 socket.send(pacote);
             }else{
                 InetAddress ipDestino = usuariosOnline.get(selecionado);
-                int portaPrivadaDestino = porta + 1;
-                
-                DatagramPacket pacotePrivado = new DatagramPacket(msg.getBytes(), msg.length(), ipDestino, portaPrivadaDestino);
-                socketUnicast.send(pacotePrivado);
+                if (ipDestino != null) {
+            int portaPrivadaDestino = Integer.parseInt(jTextField_Porta.getText()) + 1;
+            
+            
+            String msgParaRede = "[" + horaAtual + "] [PRIVADO] " + jTextField_Nick.getText() + " diz: " + jTextField_textoDeEnvio.getText();
+            DatagramPacket pacotePrivado = new DatagramPacket(msgParaRede.getBytes(), msgParaRede.length(), ipDestino, portaPrivadaDestino);
+            socketUnicast.send(pacotePrivado); 
+            
+    
+            String msgMinhaTela = "[" + horaAtual + "] [PRIVADO para " + selecionado + "] eu: " + jTextField_textoDeEnvio.getText();
+            jTextArea_Mensagens.append(msgMinhaTela + "\n");
+            
+      
+            lista.add(msgMinhaTela);
+            salvarHistorico(msgMinhaTela);
+            
+        } else {
+            JOptionPane.showMessageDialog(this, "Erro: IP do usuário não encontrado.");
+        }
             }
         } catch (IOException | NumberFormatException | NullPointerException e) {
             if (e.getClass().toString().equals("class java.lang.NullPointerException")) {
