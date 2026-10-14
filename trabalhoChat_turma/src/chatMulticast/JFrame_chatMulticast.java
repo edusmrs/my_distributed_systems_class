@@ -67,6 +67,11 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
         jTextArea_Mensagens.setFocusable(false);
         jScrollPane1.setViewportView(jTextArea_Mensagens);
 
+        jTextField_textoDeEnvio.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField_textoDeEnvioActionPerformed(evt);
+            }
+        });
         jTextField_textoDeEnvio.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 jTextField_textoDeEnvioKeyPressed(evt);
@@ -185,42 +190,65 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
      * classe interna que garante que o processo de ler/ouvir mensagens seja executado concomitantemente
      */
     class ThreadReceptora extends Thread {
-        @Override
-        public void run() {
-            JFrame meuFrame = JFrame_chatMulticast.this;
-            while (true) {
-                try {
-                    DatagramPacket pacote = ComunicadorUDP.recebeMensagem(socket);
-                    String msgRecebida = new String(pacote.getData(), 0, pacote.getLength());
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                DatagramPacket pacote = ComunicadorUDP.recebeMensagem(socket);
+                if (pacote == null) continue; 
+
+                String msgRecebida = new String(pacote.getData(), 0, pacote.getLength());
+                InetAddress ipRemetente = pacote.getAddress();
+                String meuNick = jTextField_Nick.getText();
+
+                if (msgRecebida.startsWith("[SYS_ONLINE]")) {
+                    String nickExistente = msgRecebida.substring(12).trim();
                     
-                    if(msgRecebida.contains("entrou na sala")){
-                        String nickNovo = msgRecebida.split(" ")[0];
-                        InetAddress ipNovo = pacote.getAddress();
-                        
-                        usuariosOnline.put(nickNovo, ipNovo);
+                   
+                    if (!nickExistente.equals(meuNick)) {
+                        usuariosOnline.put(nickExistente, ipRemetente);
                         atualizarListaInterface();
                     }
                     
-                    if(msgRecebida.contains("saiu na sala")){
-                        String nickNovo = msgRecebida.split(" ")[0];
                     
-                       
-                        usuariosOnline.remove(nickNovo);
-                        atualizarListaInterface();
-                    }
-                    
-                    lista.add(msgRecebida);
-                    Iterator i = lista.iterator();
-                    jTextArea_Mensagens.setText("");
-                    while (i.hasNext()) {
-                        jTextArea_Mensagens.append(i.next().toString() + "\n");
-                    }
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(meuFrame, e.getMessage());
+                    continue; 
                 }
+
+
+                if (msgRecebida.contains("entrou na sala")) {
+                    String nickNovo = msgRecebida.split(" ")[0];
+                    
+                    usuariosOnline.put(nickNovo, ipRemetente);
+                    atualizarListaInterface();
+                    
+                  
+                    if (!nickNovo.equals(meuNick)) {
+                        String msgResposta = "[SYS_ONLINE]" + meuNick;
+                        DatagramPacket pctResp = ComunicadorUDP.montaMensagem(msgResposta, jTextField_GrupoIP.getText(), Integer.parseInt(jTextField_Porta.getText()));
+                        socket.send(pctResp); 
+                    }
+                }
+                
+       
+                else if (msgRecebida.contains("saiu da sala")) {
+                    String nickSaindo = msgRecebida.split(" ")[0];
+                    usuariosOnline.remove(nickSaindo);
+                    atualizarListaInterface();
+                }
+
+                
+                lista.add(msgRecebida);
+                salvarHistorico(msgRecebida);
+                
+              
+                jTextArea_Mensagens.append(msgRecebida + "\n");
+                
+            } catch (Exception e) {
+                System.out.println("Erro na recepção multicast: " + e.getMessage());
             }
         }
     }
+}
     
     
     class ThreadReceptoraUnicast extends Thread {
@@ -302,7 +330,8 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
      */
     private void sairDoSistema() throws IOException, NumberFormatException, NullPointerException {
         try {
-            String msg = jTextField_Nick.getText() + " saiu da sala";
+            String horaAtual = new SimpleDateFormat("HH:mm:ss").format(new Date());
+            String msg = "[" + horaAtual + "] " +  jTextField_Nick.getText() + " saiu da sala";
             DatagramPacket pacote = ComunicadorUDP.montaMensagem(msg, jTextField_GrupoIP.getText(), Integer.parseInt(jTextField_Porta.getText()));
             socket.send(pacote);
 
@@ -357,7 +386,8 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
                 jTextField_GrupoIP.setEnabled(false);
                 jTextField_Porta.setEnabled(false);
 
-                String msg = jTextField_Nick.getText() + " entrou na sala";
+                String horaAtual = new SimpleDateFormat("HH:mm:ss").format(new Date());
+                String msg = "[" + horaAtual + "] " + jTextField_Nick.getText() + " entrou na sala";
                 DatagramPacket pacote = ComunicadorUDP.montaMensagem(msg, jTextField_GrupoIP.getText(), Integer.parseInt(jTextField_Porta.getText()));
                 socket.send(pacote);
                 jTextField_textoDeEnvio.requestFocus();
@@ -402,6 +432,9 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
             
       
             lista.add(msgMinhaTela);
+            
+            jTextField_textoDeEnvio.setText("");
+            
             salvarHistorico(msgMinhaTela);
             
         } else {
@@ -464,6 +497,10 @@ public class JFrame_chatMulticast extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_jTextField_textoDeEnvioKeyPressed
+
+    private void jTextField_textoDeEnvioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField_textoDeEnvioActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField_textoDeEnvioActionPerformed
 
     /**
      * @param args the command line arguments
